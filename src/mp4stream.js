@@ -30,12 +30,11 @@ MP4Stream.prototype.parse = function() {
 			console.log('BoxParser.parseOneBox',this.stream.getPosition(),this.stream.getEndPosition());
 			var ret = BoxParser.parseOneBox(this.stream, parseBoxHeadersOnly);
 			if (ret.code === BoxParser.ERR_NOT_ENOUGH_DATA) {	
-				console.log('ERR_NOT_ENOUGH_DATA',ret);	
 				if (this.processIncompleteBox(ret)) continue;
 				else return;
 			} else {
 				this.emit('box',ret.box);
-				this.updateUsedBytes(ret.box, ret);					
+				this.updateUsedBytes(ret.box, ret);	
 			}
 		}
 	}
@@ -47,7 +46,6 @@ MP4Stream.prototype.discardMdatData = false;
 
 MP4Stream.prototype.processIncompleteBox = function(ret) {	
 	var merged = this.stream.mergeNextBuffer();
-	console.log('processIncompleteBox',merged);
 	if (ret.type === "mdat") { 
 		var box = new BoxParser[ret.type+"Box"](ret.size);	
 		box.start = ret.start;
@@ -63,15 +61,15 @@ MP4Stream.prototype.hasIncompleteMdat = function () {
 
 MP4Stream.prototype.processIncompleteMdat = function () {
 	var merged = this.stream.mergeNextBuffer();
-	console.log('processIncompleteMdat',merged);
 	if (!merged) return merged;
 	var box = this.parsingMdat;
 	var found = this.stream.seek(box.start + box.size, false, this.discardMdatData);
 	if (found) {
-		this.stream.seek(box.start, false, this.discardMdatData);
+		this.stream.seek(box.start+box.hdr_size, false, this.discardMdatData);
+		box.data = this.stream.readUint8Array(box.size-box.hdr_size);
+		this.emit('box',box);
 		this.parsingMdat = null; 
 	}
-	console.log('processIncompleteMdat 2',found);
 	return found;
 }
 
