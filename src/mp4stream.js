@@ -33,6 +33,11 @@ MP4Stream.prototype.parse = function() {
 				if (this.processIncompleteBox(ret)) continue;
 				else return;
 			} else {
+				if (ret.box.type=='mdat') {
+					//Not sure with parseOneBox do not add data field
+					this.stream.seek(ret.box.start+ret.box.hdr_size, false, this.discardMdatData);
+					ret.box.data = this.stream.readUint8Array(ret.box.size-ret.box.hdr_size);
+				}
 				this.emit('box',ret.box);
 				this.updateUsedBytes(ret.box, ret);	
 			}
